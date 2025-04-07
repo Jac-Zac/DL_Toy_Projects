@@ -116,18 +116,22 @@ def save_model_activations(
     model: torch.nn.Module,
     device: torch.device,
     recorder: ActivationRecorder,
-    epoch: int,
+    epoch: str | float | int,
     batch_size: int = 32,
 ) -> None:
     """
-    Record activations for both train and test sets and save them to files.
+    Record activations for both train and test sets and save them to separate folders.
     """
     from utils.data import get_dataloaders
 
-    # Ensure the directory exists
-    os.makedirs(save_activation_path, exist_ok=True)
+    # Define subdirectories for train and test
+    train_path = os.path.join(save_activation_path, "train")
+    test_path = os.path.join(save_activation_path, "test")
 
-    # Get train and test data loaders
+    os.makedirs(train_path, exist_ok=True)
+    os.makedirs(test_path, exist_ok=True)
+
+    # Get data loaders
     train_loader, test_loader = get_dataloaders(
         batch_size, shuffle=False, num_elements=384
     )
@@ -136,23 +140,27 @@ def save_model_activations(
     train_activations, train_labels = record_activations(
         model, recorder, train_loader, device
     )
+
+    # Create an epoch string
+    epoch_str = f"{float(epoch):05.2f}".replace(".", "_")
+
     save_activations_npz(
-        save_activation_path,
-        f"train_activations_epoch{epoch}.npz",
+        os.path.join(save_activation_path, "train"),
+        f"epoch_{epoch_str}.npz",
         train_activations,
         train_labels,
     )
-
     # Record and save activations for test set
     test_activations, test_labels = record_activations(
         model, recorder, test_loader, device
     )
+
     save_activations_npz(
-        save_activation_path,
-        f"test_activations_epoch{epoch}.npz",
+        os.path.join(save_activation_path, "test"),
+        f"epoch_{epoch_str}.npz",
         test_activations,
         test_labels,
     )
 
-    # Clean up hooks after saving
+    # Clean up
     recorder.remove_hooks()

@@ -19,7 +19,7 @@ def parse_args():
     parser.add_argument(
         "--model-path",
         type=str,
-        default="./saved_models/simple_mlp.pth",
+        default="./models/simple_mlp.pth",
         help="Path to save or load the model.",
     )
 
@@ -30,7 +30,7 @@ def parse_args():
 
     # Number of epochs for training
     parser.add_argument(
-        "--epochs", type=int, default=10, help="Number of epochs for training."
+        "--epochs", type=int, default=5, help="Number of epochs for training."
     )
 
     # Learning rate for training
@@ -46,8 +46,8 @@ def parse_args():
     # Frequency of saving activations (0 for never, 1 for every epoch, etc.)
     parser.add_argument(
         "--save-activation-frequency",
-        type=int,
-        default=1,
+        type=float,
+        default=0.5,
         help="Frequency of saving activations. 0 for never, 1 for every epoch, etc.",
     )
 

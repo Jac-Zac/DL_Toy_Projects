@@ -2,7 +2,7 @@
 
 from dataclasses import dataclass
 
-from model import SimpleMLP, load_pretrained_model
+from model import load_pretrained_model
 from train_test import evaluate, train_model
 from utils.args_parser import parse_args
 from utils.data import get_dataloaders
@@ -20,8 +20,8 @@ class SimpleMLPTrainingArgs:
     criterion: str = "CrossEntropyLoss"  # Default loss criterion
     seed: int = 42
     save_model: bool = True  # Flag to save the model or not
-    save_activation_frequency: int = 1  # Frequency of saving activations
-    save_model_path: str = "./saved_models/simple_mlp.pth"  # Path to save the model
+    save_activation_frequency: float = 0  # Frequency of saving activations
+    save_model_path: str = "./models/simple_mlp.pth"  # Path to save the model
     save_activation_path: str = "./activations/"  # Path to the saved activations
 
 

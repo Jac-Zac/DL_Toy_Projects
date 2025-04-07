@@ -1,10 +1,20 @@
-# Exercise on Representation Extraction and Visualization
+# Representation Extraction & Visualization Exercise
+
+## Quick Start
+```bash
+# Get all instructions
+python src/main.py --help
+
+# Train a new model
+python src/main.py --model train
+
+# Use existing model
+python src/main.py --model load
+```
 
 ## Overview
 
-This exercise focuses on extracting and visualizing data representations using a neural network. You will work with the MNIST dataset, train a small multi-layer perceptron (MLP), and apply dimensionality reduction techniques such as UMAP (preferred) or T-SNE to visualize how the representations evolve during training.
-
-By the end of this exercise, you should have a better understanding of how neural networks form data representations and how to use techniques like UMAP to interpret them.
+This exercise focuses on extracting and visualizing neural network representations using the MNIST dataset. You'll train a small MLP and apply dimensionality reduction (UMAP/T-SNE) to visualize how representations evolve during training.
 
 ## Steps to Complete the Exercise
 

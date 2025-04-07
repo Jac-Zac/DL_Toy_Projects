@@ -1,4 +1,5 @@
-from typing import Any, Dict, List, Optional
+import os
+from typing import Any, Dict, List, Optional, Union
 
 import dash
 import dash_bootstrap_components as dbc
@@ -62,26 +63,63 @@ def create_dash_app(
     metric: str = "euclidean",
     random_state: int = 42,
 ):
-    """Create and configure a Dash app for visualizing neural network activations with UMAP projections."""
+    """
+    Create and configure a Dash app for visualizing neural network activations with UMAP projections.
+    """
 
-    # Load activations and labels with the new structure
-    activation_data = load_activations(activation_dir, epochs)
+    # Define the train directory path
+    train_dir = os.path.join(activation_dir, "train")
+
+    # Extract epoch values from filenames
+    epoch_files = [
+        f
+        for f in os.listdir(train_dir)
+        if f.startswith("epoch_") and f.endswith(".npz")
+    ]
+
+    # Convert epoch filenames to float values
+    available_epochs = sorted(
+        float(f.replace("epoch_", "").replace(".npz", "").replace("_", "."))
+        for f in epoch_files
+    )
+
+    # Filter epochs up to the specified integer
+    filtered_epochs = [e for e in available_epochs if e <= epochs]
+
+    # Load activations and labels
+    activation_data = load_activations(activation_dir, filtered_epochs)
     train_data = activation_data["train"]
     test_data = activation_data["test"]
 
     train_labels = train_data["labels"]
     test_labels = test_data["labels"]
 
-    # Get available layers from first epoch's data
-    available_layers = list(train_data["activations"][0].keys())
+    # Get epoch list and available layers
+    epoch_list = sorted(train_data["activations"].keys())
+    first_epoch = epoch_list[0]
+    available_layers = [
+        layer.replace("act_", "")
+        for layer in train_data["activations"][first_epoch].keys()
+    ]
 
     # Pre-compute embeddings for each layer and epoch
     embeddings = {}
     for layer in available_layers:
         embeddings[layer] = {}
-        for epoch in range(epochs):
-            train_act = train_data["activations"][epoch][layer]
-            test_act = test_data["activations"][epoch].get(layer, None)
+        for epoch in epoch_list:
+            # Handle potential "act_" prefix in layer keys
+            layer_key = (
+                f"act_{layer}"
+                if f"act_{layer}" in train_data["activations"][epoch]
+                else layer
+            )
+            train_act = train_data["activations"][epoch][layer_key]
+
+            # Check if the epoch exists in test data and if the layer exists for that epoch
+            test_act = None
+            if epoch in test_data["activations"]:
+                if layer_key in test_data["activations"][epoch]:
+                    test_act = test_data["activations"][epoch][layer_key]
 
             embeddings[layer][epoch] = compute_embedding(
                 train_act, test_act, n_neighbors, min_dist, metric, random_state
@@ -92,6 +130,16 @@ def create_dash_app(
 
     # Initialize the Dash app with the "Darkly" Bootstrap theme
     app = dash.Dash(__name__, external_stylesheets=[dbc.themes.DARKLY])
+
+    # Create epoch marks for the slider
+    # Format epoch values for slider marks (every 5th mark to avoid crowding)
+    show_every_nth = max(1, len(epoch_list) // 10)  # Show at most ~10 marks
+    epoch_marks = {
+        i: f"{epoch_list[i]:.2f}" for i in range(0, len(epoch_list), show_every_nth)
+    }
+    # Always show the first and last epoch
+    epoch_marks[0] = f"{epoch_list[0]:.2f}"
+    epoch_marks[len(epoch_list) - 1] = f"{epoch_list[-1]:.2f}"
 
     app.layout = dbc.Container(
         fluid=True,
@@ -158,12 +206,15 @@ def create_dash_app(
                                             dcc.Slider(
                                                 id="epoch-slider",
                                                 min=0,
-                                                max=epochs - 1,
+                                                max=len(epoch_list) - 1,
                                                 step=1,
                                                 value=0,
-                                                marks={
-                                                    i: str(i) for i in range(epochs)
-                                                },
+                                                marks=epoch_marks,
+                                            ),
+                                            html.Div(
+                                                id="current-epoch-display",
+                                                className="text-center mt-2",
+                                                children=f"Current Epoch: {epoch_list[0]:.2f}",
                                             ),
                                         ],
                                         width=7,
@@ -250,6 +301,8 @@ def create_dash_app(
                 n_intervals=0,
                 disabled=True,
             ),
+            # Store component to save epoch list
+            dcc.Store(id="epoch-data", data={"epochs": epoch_list}),
         ],
     )
 
@@ -274,7 +327,7 @@ def create_dash_app(
         new_disabled_state = not currently_disabled
         button_class = (
             "btn btn-danger mb-2 fa-pause"
-            if new_disabled_state
+            if not new_disabled_state
             else "btn btn-primary mb-2 fa-play"
         )
         return new_disabled_state, button_class
@@ -297,17 +350,23 @@ def create_dash_app(
         return next_epoch
 
     @app.callback(
-        Output("umap-graph", "figure"),
+        [Output("umap-graph", "figure"), Output("current-epoch-display", "children")],
         [
             Input("layer-dropdown", "value"),
             Input("colorscale-dropdown", "value"),
             Input("epoch-slider", "value"),
         ],
+        [State("epoch-data", "data")],
     )
-    def update_graph(selected_layer: str, colorscale: str, selected_epoch: int) -> Any:
+    def update_graph(
+        selected_layer: str, colorscale: str, epoch_index: int, epoch_data: Dict
+    ) -> Any:
         """
         Update the UMAP graph when the selected layer or colorscale changes or when the epoch slider is adjusted.
         """
+        # Get the actual epoch value from the index
+        selected_epoch = epoch_data["epochs"][epoch_index]
+
         # Get the pre-computed embeddings for this layer and epoch
         train_embedding, test_embedding = embeddings[selected_layer][selected_epoch]
 
@@ -367,7 +426,7 @@ def create_dash_app(
         # Update the layout with the "darkly" theme and additional styling
         fig.update_layout(
             title=dict(
-                text=f"<b>UMAP Projection of {selected_layer} Activations - Epoch {selected_epoch}</b>",
+                text=f"<b>UMAP Projection of {selected_layer} Activations - Epoch {selected_epoch:.2f}</b>",
                 font=dict(size=26),
                 x=0.5,
             ),
@@ -379,6 +438,10 @@ def create_dash_app(
             ),
             margin=dict(l=50, r=50, t=120, b=50),
         )
-        return fig
+
+        # Update current epoch display
+        current_epoch_display = f"Current Epoch: {selected_epoch:.2f}"
+
+        return fig, current_epoch_display
 
     return app

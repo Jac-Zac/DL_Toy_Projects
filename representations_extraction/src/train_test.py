@@ -1,3 +1,4 @@
+import os
 from typing import Optional
 
 import torch
@@ -17,24 +18,34 @@ def train(
     optimizer: Optimizer,
     criterion: nn.Module,
     device: torch.device,
-    save_activation_frequency: int = 0,
+    save_activation_frequency: float = 0.0,
     save_activation_path: str = "",
     batch_size: int = 64,
     recorder: Optional[ActivationRecorder] = None,
 ) -> nn.Module:
     """
-    Train a PyTorch model with optional activation recording.
+    Train a PyTorch model with optional activation recording at fractional epochs.
     """
     model.to(device)
     model.train()
 
+    total_batches = len(train_loader)
+    batches_per_activation = (
+        int(total_batches * save_activation_frequency)
+        if save_activation_frequency
+        else None
+    )
+
     for epoch in range(1, max_epochs + 1):
         total_loss = 0.0
         progress_bar = tqdm(
-            train_loader, desc=f"Epoch {epoch}/{max_epochs}", leave=False
+            enumerate(train_loader, start=1),
+            total=total_batches,
+            desc=f"Epoch {epoch}/{max_epochs}",
+            leave=False,
         )
 
-        for x, y in progress_bar:
+        for batch_idx, (x, y) in progress_bar:
             x, y = x.to(device), y.to(device)
 
             optimizer.zero_grad()
@@ -46,13 +57,34 @@ def train(
             total_loss += loss.item()
             progress_bar.set_postfix(loss=f"{loss.item():.4f}")
 
-        avg_loss = total_loss / len(train_loader)
+            # Save activations at fractional intervals
+            if (
+                recorder
+                and save_activation_frequency > 0
+                and batches_per_activation
+                and batch_idx % batches_per_activation == 0
+            ):
+                fractional_epoch = epoch - 1 + batch_idx / total_batches
+                print(
+                    f"Epoch {epoch} - Saving activations at fractional epoch {fractional_epoch:.2f}..."
+                )
+                save_model_activations(
+                    save_activation_path=save_activation_path,
+                    batch_size=batch_size,
+                    model=model,
+                    device=device,
+                    epoch=f"{fractional_epoch:.2f}",
+                    recorder=recorder,
+                )
+
+        avg_loss = total_loss / total_batches
         print(f"Epoch {epoch} completed - Avg Loss: {avg_loss:.4f}")
 
+        # Save full-epoch activations if requested
         if (
-            save_activation_frequency
-            and epoch % save_activation_frequency == 0
-            and recorder
+            recorder
+            and save_activation_frequency >= 1
+            and epoch % int(save_activation_frequency) == 0
         ):
             print(f"Epoch {epoch} - Storing activations...")
             save_model_activations(
@@ -125,6 +157,7 @@ def train_model(args, device):
     )
 
     if args.save_model:
+        os.makedirs(os.path.dirname(args.save_model_path), exist_ok=True)
         torch.save(model.state_dict(), args.save_model_path)
         print(f"Model saved to {args.save_model_path}")
 
