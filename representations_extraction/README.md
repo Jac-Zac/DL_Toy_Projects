@@ -12,6 +12,29 @@ python src/main.py --model train
 python src/main.py --model load
 ```
 
+## Folder Structure
+
+Here’s a suggested folder structure for your project:
+
+```bash
+.
+├── src
+│   ├── utils
+│   │   ├── __init__.py
+│   │   ├── activations.py
+│   │   ├── args_parser.py
+│   │   ├── data.py
+│   │   ├── environment.py
+│   │   └── plot.py
+│   ├── __init__.py
+│   ├── activation_hook.py
+│   ├── main.py
+│   ├── model.py
+│   └── train_test.py
+├── README.md
+└── requirements.txt
+```
+
 ## Overview
 
 This exercise focuses on extracting and visualizing neural network representations using the MNIST dataset. You'll train a small MLP and apply dimensionality reduction (UMAP/T-SNE) to visualize how representations evolve during training.
@@ -69,17 +92,3 @@ This exercise focuses on extracting and visualizing neural network representatio
 
    > [!IMPORTANT]
    >  This step is crucial to understanding how the network gradually "learns" and refines its internal representations.
-
-## Folder Structure
-
-Here’s a suggested folder structure for your project:
-
-```bash
-. 
-├── data                # Dataset files (e.g., MNIST)
-├── main.py             # Main script to run training and evaluation
-├── model.py            # Contains model architecture
-├── README.md           # This file
-├── train_test.py       # Script for training and testing the model
-└── utils.py            # Helper functions for data processing, etc.
-
