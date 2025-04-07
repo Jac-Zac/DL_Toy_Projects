@@ -10,7 +10,6 @@
 **/*.aux
 **/*.fdb_latexmk
 **/*.tsv
-**/*.txt
 **/.env
 **/.pgm
 **/.pdf
