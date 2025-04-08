@@ -10,9 +10,9 @@ def parse_args():
     parser.add_argument(
         "--mode",
         type=str,
-        choices=["train", "load"],
+        choices=["train", "visualize"],
         required=True,
-        help="Mode: 'train' to train a new model or 'load' to load a pretrained model.",
+        help="Mode: 'train' to train a new model or 'visualize' to visualize a pretrained model.",
     )
 
     # Path to save or load the model
@@ -30,7 +30,7 @@ def parse_args():
 
     # Number of epochs for training
     parser.add_argument(
-        "--epochs", type=int, default=5, help="Number of epochs for training."
+        "--epochs", type=int, default=2, help="Number of epochs for training."
     )
 
     # Learning rate for training
@@ -47,7 +47,7 @@ def parse_args():
     parser.add_argument(
         "--save-activation-frequency",
         type=float,
-        default=0.5,
+        default=0.1,
         help="Frequency of saving activations. 0 for never, 1 for every epoch, etc.",
     )
 

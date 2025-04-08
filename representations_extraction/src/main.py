@@ -55,7 +55,7 @@ def main():
         _, test_loader = get_dataloaders(args.batch_size)
         evaluate(model, test_loader, device)
         return
-    elif args.mode == "load":
+    elif args.mode == "visualize":
         # Load pretrained model
         model = load_pretrained_model(args.model_path, device)
         _, test_loader = get_dataloaders(args.batch_size)

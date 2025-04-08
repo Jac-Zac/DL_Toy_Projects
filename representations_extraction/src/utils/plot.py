@@ -1,5 +1,5 @@
 import os
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional
 
 import dash
 import dash_bootstrap_components as dbc
@@ -14,7 +14,6 @@ from utils.activations import load_activations
 
 
 def get_colorscale_options() -> List[Dict[str, str]]:
-    """Return a list of available colorscale options for the dropdown."""
     return [
         {"label": "Viridis", "value": "Viridis"},
         {"label": "Plasma", "value": "Plasma"},
@@ -65,28 +64,21 @@ def create_dash_app(
 ):
     """
     Create and configure a Dash app for visualizing neural network activations with UMAP projections.
+    This version computes axis ranges based on the UMAP values so that the plot always centers the data.
+    The axes (and the point positions) animate smoothly between states.
     """
-
-    # Define the train directory path
     train_dir = os.path.join(activation_dir, "train")
-
-    # Extract epoch values from filenames
     epoch_files = [
         f
         for f in os.listdir(train_dir)
         if f.startswith("epoch_") and f.endswith(".npz")
     ]
-
-    # Convert epoch filenames to float values
     available_epochs = sorted(
         float(f.replace("epoch_", "").replace(".npz", "").replace("_", "."))
         for f in epoch_files
     )
-
-    # Filter epochs up to the specified integer
     filtered_epochs = [e for e in available_epochs if e <= epochs]
 
-    # Load activations and labels
     activation_data = load_activations(activation_dir, filtered_epochs)
     train_data = activation_data["train"]
     test_data = activation_data["test"]
@@ -94,50 +86,36 @@ def create_dash_app(
     train_labels = train_data["labels"]
     test_labels = test_data["labels"]
 
-    # Get epoch list and available layers
     epoch_list = sorted(train_data["activations"].keys())
     first_epoch = epoch_list[0]
     available_layers = [
-        layer.replace("act_", "")
-        for layer in train_data["activations"][first_epoch].keys()
+        layer.replace("act_", "") for layer in train_data["activations"][first_epoch]
     ]
 
-    # Pre-compute embeddings for each layer and epoch
     embeddings = {}
     for layer in available_layers:
         embeddings[layer] = {}
         for epoch in epoch_list:
-            # Handle potential "act_" prefix in layer keys
             layer_key = (
                 f"act_{layer}"
                 if f"act_{layer}" in train_data["activations"][epoch]
                 else layer
             )
             train_act = train_data["activations"][epoch][layer_key]
-
-            # Check if the epoch exists in test data and if the layer exists for that epoch
             test_act = None
             if epoch in test_data["activations"]:
-                if layer_key in test_data["activations"][epoch]:
-                    test_act = test_data["activations"][epoch][layer_key]
-
+                test_act = test_data["activations"][epoch].get(layer_key)
             embeddings[layer][epoch] = compute_embedding(
                 train_act, test_act, n_neighbors, min_dist, metric, random_state
             )
 
-    # Load the "Darkly" figure template for Plotly figures
     load_figure_template("darkly")
-
-    # Initialize the Dash app with the "Darkly" Bootstrap theme
     app = dash.Dash(__name__, external_stylesheets=[dbc.themes.DARKLY])
 
-    # Create epoch marks for the slider
-    # Format epoch values for slider marks (every 5th mark to avoid crowding)
-    show_every_nth = max(1, len(epoch_list) // 10)  # Show at most ~10 marks
+    show_every_nth = max(1, len(epoch_list) // 10)
     epoch_marks = {
         i: f"{epoch_list[i]:.2f}" for i in range(0, len(epoch_list), show_every_nth)
     }
-    # Always show the first and last epoch
     epoch_marks[0] = f"{epoch_list[0]:.2f}"
     epoch_marks[len(epoch_list) - 1] = f"{epoch_list[-1]:.2f}"
 
@@ -158,15 +136,13 @@ def create_dash_app(
                             dcc.Dropdown(
                                 id="layer-dropdown",
                                 options=[
-                                    {"label": layer, "value": layer}
-                                    for layer in available_layers
+                                    {"label": l, "value": l} for l in available_layers
                                 ],
                                 value=available_layers[0],
                                 clearable=False,
                                 className="mb-3",
                             ),
                         ],
-                        width=16,
                         md=8,
                     ),
                     dbc.Col(
@@ -180,18 +156,12 @@ def create_dash_app(
                                 className="mb-3",
                             ),
                         ],
-                        width=8,
                         md=3,
                     ),
-                ],
-                className="mb-4",
+                ]
             ),
             dbc.Card(
-                dbc.CardBody(
-                    [
-                        dcc.Graph(id="umap-graph"),
-                    ]
-                ),
+                dbc.CardBody([dcc.Graph(id="umap-graph")]),
                 className="border border-secondary mb-4",
             ),
             dbc.Row(
@@ -238,7 +208,6 @@ def create_dash_app(
                                                 className="mb-3",
                                             ),
                                         ],
-                                        width=12,
                                         md=3,
                                     ),
                                     dbc.Col(
@@ -251,10 +220,9 @@ def create_dash_app(
                                         width=2,
                                         className="d-flex justify-content-center align-items-center",
                                     ),
-                                ],
+                                ]
                             ),
-                        ],
-                        width=12,
+                        ]
                     ),
                 ],
                 className="mb-4",
@@ -278,7 +246,7 @@ def create_dash_app(
                                                 "Choose different color scales to visualize the data."
                                             ),
                                             html.Li(
-                                                "Use the slider below the plot to select an epoch or click the play button to animate through epochs."
+                                                "Use the slider to select an epoch or click play to animate through epochs."
                                             ),
                                         ],
                                         style={"fontSize": "16px"},
@@ -287,21 +255,13 @@ def create_dash_app(
                             ),
                             className="border border-secondary",
                         ),
-                    ],
-                    width=12,
-                ),
-                className="mt-4",
+                    ]
+                )
             ),
-            # Hidden div for animation control
             html.Div(id="animation-control", style={"display": "none"}),
-            # Interval component for the animation
             dcc.Interval(
-                id="interval-component",
-                interval=1000,  # Default to 1 second, will be updated by the slider
-                n_intervals=0,
-                disabled=True,
+                id="interval-component", interval=1000, n_intervals=0, disabled=True
             ),
-            # Store component to save epoch list
             dcc.Store(id="epoch-data", data={"epochs": epoch_list}),
         ],
     )
@@ -311,7 +271,6 @@ def create_dash_app(
         Input("animation-speed-slider", "value"),
     )
     def update_animation_speed(speed_value):
-        """Update the animation interval based on the speed slider."""
         return speed_value
 
     @app.callback(
@@ -320,34 +279,28 @@ def create_dash_app(
         [State("interval-component", "disabled")],
     )
     def toggle_animation(n_clicks, currently_disabled):
-        """Toggle the animation on/off when the play button is clicked."""
         if n_clicks is None:
             return True, "btn btn-primary mb-2 fa-play"
-
-        new_disabled_state = not currently_disabled
-        button_class = (
+        new_state = not currently_disabled
+        return new_state, (
             "btn btn-danger mb-2 fa-pause"
-            if not new_disabled_state
+            if not new_state
             else "btn btn-primary mb-2 fa-play"
         )
-        return new_disabled_state, button_class
 
     @app.callback(
         Output("epoch-slider", "value"),
-        [Input("interval-component", "n_intervals")],
+        Input("interval-component", "n_intervals"),
         [
             State("epoch-slider", "value"),
             State("epoch-slider", "max"),
             State("interval-component", "disabled"),
         ],
     )
-    def advance_epoch_slider(n_intervals, current_epoch, max_epoch, animation_disabled):
-        """Advance the epoch slider when the animation interval triggers."""
+    def advance_epoch(n_intervals, current_epoch, max_epoch, animation_disabled):
         if animation_disabled:
             return current_epoch
-
-        next_epoch = (current_epoch + 1) % (max_epoch + 1)
-        return next_epoch
+        return (current_epoch + 1) % (max_epoch + 1)
 
     @app.callback(
         [Output("umap-graph", "figure"), Output("current-epoch-display", "children")],
@@ -356,21 +309,15 @@ def create_dash_app(
             Input("colorscale-dropdown", "value"),
             Input("epoch-slider", "value"),
         ],
-        [State("epoch-data", "data")],
+        State("epoch-data", "data"),
     )
     def update_graph(
         selected_layer: str, colorscale: str, epoch_index: int, epoch_data: Dict
     ) -> Any:
-        """
-        Update the UMAP graph when the selected layer or colorscale changes or when the epoch slider is adjusted.
-        """
-        # Get the actual epoch value from the index
         selected_epoch = epoch_data["epochs"][epoch_index]
-
-        # Get the pre-computed embeddings for this layer and epoch
         train_embedding, test_embedding = embeddings[selected_layer][selected_epoch]
 
-        # Create the figure with subplots for training and test data
+        # Create the subplot figure
         fig = make_subplots(
             rows=1,
             cols=2,
@@ -379,51 +326,67 @@ def create_dash_app(
         )
 
         # Trace for training data
-        train_trace = go.Scatter(
-            x=train_embedding[:, 0],
-            y=train_embedding[:, 1],
-            mode="markers",
-            marker=dict(
-                color=train_labels,
-                colorscale=colorscale,
-                showscale=True,
-                symbol="circle",
-                size=8,
-                opacity=0.8,
-                colorbar=dict(title="Class"),
-            ),
-            name="Training Data",
-            hovertemplate="<b>Class:</b> %{marker.color}<br><b>UMAP 1:</b> %{x:.3f}<br><b>UMAP 2:</b> %{y:.3f}<extra></extra>",
-        )
-        fig.add_trace(train_trace, row=1, col=1)
-
-        # Trace for test data
-        if test_embedding is not None:
-            test_trace = go.Scatter(
-                x=test_embedding[:, 0],
-                y=test_embedding[:, 1],
+        fig.add_trace(
+            go.Scatter(
+                x=train_embedding[:, 0],
+                y=train_embedding[:, 1],
                 mode="markers",
                 marker=dict(
-                    color=test_labels,
+                    color=train_labels,
                     colorscale=colorscale,
                     showscale=True,
-                    symbol="triangle-up",
+                    symbol="circle",
                     size=8,
                     opacity=0.8,
                     colorbar=dict(title="Class"),
                 ),
-                name="Test Data",
+                name="Training Data",
                 hovertemplate="<b>Class:</b> %{marker.color}<br><b>UMAP 1:</b> %{x:.3f}<br><b>UMAP 2:</b> %{y:.3f}<extra></extra>",
+            ),
+            row=1,
+            col=1,
+        )
+
+        # Trace for test data (if available)
+        if test_embedding is not None:
+            fig.add_trace(
+                go.Scatter(
+                    x=test_embedding[:, 0],
+                    y=test_embedding[:, 1],
+                    mode="markers",
+                    marker=dict(
+                        color=test_labels,
+                        colorscale=colorscale,
+                        showscale=True,
+                        symbol="triangle-up",
+                        size=8,
+                        opacity=0.8,
+                        colorbar=dict(title="Class"),
+                    ),
+                    name="Test Data",
+                    hovertemplate="<b>Class:</b> %{marker.color}<br><b>UMAP 1:</b> %{x:.3f}<br><b>UMAP 2:</b> %{y:.3f}<extra></extra>",
+                ),
+                row=1,
+                col=2,
             )
-            fig.add_trace(test_trace, row=1, col=2)
 
-        # Update axes labels for both subplots
-        fig.update_xaxes(title_text="UMAP 1", row=1, col=1)
-        fig.update_yaxes(title_text="UMAP 2", row=1, col=1)
-        fig.update_xaxes(title_text="UMAP 1", row=1, col=2)
-        fig.update_yaxes(title_text="UMAP 2", row=1, col=2)
+        def compute_range(values, padding_ratio=0.1):
+            vmin, vmax = values.min(), values.max()
+            padding = (vmax - vmin) * padding_ratio
+            return [vmin - padding, vmax + padding]
 
-        # Update the layout with the "darkly" theme and additional styling
+        train_x_range = compute_range(train_embedding[:, 0])
+        train_y_range = compute_range(train_embedding[:, 1])
+        fig.update_xaxes(range=train_x_range, title_text="UMAP 1", row=1, col=1)
+        fig.update_yaxes(range=train_y_range, title_text="UMAP 2", row=1, col=1)
+
+        if test_embedding is not None:
+            test_x_range = compute_range(test_embedding[:, 0])
+            test_y_range = compute_range(test_embedding[:, 1])
+            fig.update_xaxes(range=test_x_range, title_text="UMAP 1", row=1, col=2)
+            fig.update_yaxes(range=test_y_range, title_text="UMAP 2", row=1, col=2)
+
+        # Remove the dynamic uirevision so that the axis changes animate instead of snapping.
         fig.update_layout(
             title=dict(
                 text=f"<b>UMAP Projection of {selected_layer} Activations - Epoch {selected_epoch:.2f}</b>",
@@ -437,11 +400,10 @@ def create_dash_app(
                 orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1
             ),
             margin=dict(l=50, r=50, t=120, b=50),
+            uirevision="constant",
+            transition=dict(duration=500, easing="cubic-in-out"),
         )
 
-        # Update current epoch display
-        current_epoch_display = f"Current Epoch: {selected_epoch:.2f}"
-
-        return fig, current_epoch_display
+        return fig, f"Current Epoch: {selected_epoch:.2f}"
 
     return app
