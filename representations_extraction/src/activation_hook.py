@@ -9,25 +9,18 @@ from utils.activations import save_activations_npz
 
 
 class ActivationRecorder:
-    def __init__(self, verbose: bool = False, detach_activations: bool = True):
+    def __init__(self, verbose: bool = False):
         self.activations = defaultdict(list)
         self.verbose = verbose
-        self.detach_activations = detach_activations
         self.hook_handles = []
 
     # Capture the layer name via a closure
     # Return the new hook with the specified layer name
     def _store_activation(self, layer_name):
         def hook(module, inputs, output):
-            # Detach if necessary
-            if self.detach_activations:
-                output = output.detach().cpu()
-            else:
-                output = output.cpu()
-
             # Store the activation with that layer name
             # By appending it for each batch
-            self.activations[layer_name].append(output)
+            self.activations[layer_name].append(output.detach().cpu())
             if self.verbose:
                 print(f"Stored activation for layer: {layer_name}")
 
