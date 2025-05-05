@@ -1,7 +1,7 @@
 import os
 
 import torch
-from model import SimmetryMLP
+from model import SimpleMLP
 from torch import nn
 from torch.optim import Optimizer
 from torch.utils.data import DataLoader
@@ -79,7 +79,7 @@ def train_model(args, device):
     """
     Initialize and train the model, optionally saving it and recording activations.
     """
-    model = SimmetryMLP(hidden_sizes=args.hidden_sizes).to(device)
+    model = SimpleMLP().to(device)
 
     # Initialize optimizer based on the argument
     if args.optimizer == "Adam":
