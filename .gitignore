@@ -1,22 +1,39 @@
+# macOS system files
 **/.DS_Store
-**/__pycache__
-**/*.out
-**/*.o
+
+# Python
+**/__pycache__/
+**/*.py[cod]
 **/*.ipynb_checkpoints/
 **/*.virtual_documents
-**/*.RData
-**/*.Rhistory
-**/*.gz
+
+# LaTeX
 **/*.aux
 **/*.fdb_latexmk
+
+# Data, text, and intermediate files
 **/*.tsv
-**/.env
-**/.pgm
-**/.pdf
-**/main
-**/.zip
-**/TIME.*
-**/data/*
-**/*.pth
+**/*.txt
+**/*.gz
+**/*.zip
 **/*.npz
-./Introduction_to_AI/aima-python/*
+**/*.pth
+
+# Compiled output
+**/*.out
+**/*.o
+
+# Environment/config
+**/.env
+
+# Media and binary files
+**/*.pgm
+**/*.pdf
+**/*.png
+**/*.jpg
+**/*.jpeg
+**/*.svg
+
+# Project-specific
+**/main
+**/data/*

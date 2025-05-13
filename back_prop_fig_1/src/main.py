@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 
-import os
 from dataclasses import dataclass
 from typing import Sequence
 
@@ -17,12 +16,10 @@ from utils.environment import get_device, set_seed
 # Define the dataclass for training arguments
 @dataclass
 class MLPTrainingArgs:
-    batch_size: int = 8
+    batch_size: int = 128
     epochs: int = 5
     learning_rate: float = 1e-3
     hidden_sizes: Sequence[int] = ((64),)
-    save_model: bool = True  # Flag to save the model or not
-    save_model_path: str = "./models/simple_mlp.pth"  # Path to save the model
     optimizer: str = "Adam"  # Default optimizer
     criterion: str = "CrossEntropyLoss"  # Default loss criterion
     seed: int = 42
@@ -64,14 +61,6 @@ def main():
     criterion = nn.CrossEntropyLoss()
 
     train_loader, _ = get_dataloaders(args.batch_size)
-
-    # Train
-    if args.save_model:
-        os.makedirs(os.path.dirname(args.save_model_path), exist_ok=True)
-        torch.save(model.state_dict(), args.save_model_path)
-        print(f"Model saved to {args.save_model_path}")
-
-    print("Hello")
 
     # model = train_model(args, device)
 
