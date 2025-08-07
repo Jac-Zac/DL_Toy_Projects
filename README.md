@@ -7,10 +7,8 @@ A collection of toy project in the field of Deep Learning
 Below is a table listing all the projects in this repository along with links to their respective directories:
 
 | Project Name               | Description                                     | Link                                                        |
-| -------------------------- | ----------------------------------------------- | ----------------------------------------------------------- | -------------------------------------------- | --- |
+| -------------------------- | ----------------------------------------------- | ----------------------------------------------------------- |
 | Representations Extraction | Visualizing UMAP of activations during training | [Representations Extraction](./representations_extraction/) |
-
-<!--|                       | Neural Representations and Backpropagation      | Backpropagation Fig. 1 using PyTorch                        | [Backpropagation Fig. 1](./back_prop_fig_1/) | -->
 
 Feel free to explore each project and contribute!
 
