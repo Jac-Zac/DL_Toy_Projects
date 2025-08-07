@@ -10,7 +10,7 @@ Below is a table listing all the projects in this repository along with links to
 | -------------------------- | ----------------------------------------------- | ----------------------------------------------------------- | -------------------------------------------- | --- |
 | Representations Extraction | Visualizing UMAP of activations during training | [Representations Extraction](./representations_extraction/) |
 
-<!--|                       | Neural Representations and Backpropagation      | Backpropagation Fig. 1 using PyTorch                        | [Backpropagation Fig. 1](./back_prop_fig_1/) | --> |
+<!--|                       | Neural Representations and Backpropagation      | Backpropagation Fig. 1 using PyTorch                        | [Backpropagation Fig. 1](./back_prop_fig_1/) | -->
 
 Feel free to explore each project and contribute!
 
