@@ -1,12 +1,15 @@
 # Neural Representations and Backpropagation
 
-This project is inspired by the seminal paper [*Learning Representations by Back-Propagating Errors*](https://jontallen.ece.illinois.edu/uploads/498-NS.S21/RumelhartHintonWilliams-BackPropError.86.pdf). You'll revisit core concepts from the course by reproducing Figure 1 from the paper using PyTorch, and analyzing the internal representations learned by a neural network.
+> [!WARNING]
+> This is in the works
+
+This project is inspired by the seminal paper [_Learning Representations by Back-Propagating Errors_](https://jontallen.ece.illinois.edu/uploads/498-NS.S21/RumelhartHintonWilliams-BackPropError.86.pdf). You'll revisit core concepts from the course by reproducing Figure 1 from the paper using PyTorch, and analyzing the internal representations learned by a neural network.
 
 ---
 
 ## 📌 Objectives
 
-- 📖 Read and reflect on the paper: *Rumelhart, Hinton & Williams (1986)*
+- 📖 Read and reflect on the paper: _Rumelhart, Hinton & Williams (1986)_
 - 🧠 Identify course concepts covered in the paper and in your implementation
 - 🔁 Reproduce Figure 1 using PyTorch
 - 🗣️ Comment on:
